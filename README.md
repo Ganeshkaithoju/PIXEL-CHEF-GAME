@@ -35,8 +35,17 @@ cd PIXEL-CHEF-GAME
 # 3. Install dependencies
 npm install
 
-# 4. Run the game locally
+# 4. Install Tailwind Merge (for styling improvements)
+npm install tailwind-merge
+
+# 5. Start the development server
+npm run dev
+
+# 6. Build the project for production
+npm run build
+
+# 7. Run the production build
 npm start
 
-# 5. Open your browser and go to
+# 8. Open your browser and go to
 http://localhost:3000

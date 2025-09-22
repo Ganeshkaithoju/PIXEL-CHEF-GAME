@@ -54,6 +54,9 @@ http://localhost:3000
 
 ## 📸 Screenshots
 
-![Game Start Screen](screenshots/game-start.png)
-![Gameplay Screen](screenshots/gameplay1.png)
-![Gameplay Screen](screenshots/gameplay2.png)
+## 📸 Screenshots
+
+![Game Start Screen](https://github.com/Ganeshkaithoju/PIXEL-CHEF-GAME/blob/main/screenshots/game-start.png?raw=true)
+![Gameplay Screen 1](https://github.com/Ganeshkaithoju/PIXEL-CHEF-GAME/blob/main/screenshots/gameplay1.png?raw=true)
+![Gameplay Screen 2](https://github.com/Ganeshkaithoju/PIXEL-CHEF-GAME/blob/main/screenshots/gameplay2.png?raw=true)
+

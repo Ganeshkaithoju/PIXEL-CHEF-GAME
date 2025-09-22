@@ -49,3 +49,11 @@ npm start
 
 # 8. Open your browser and go to
 http://localhost:3000
+
+---
+
+## 📸 Screenshots
+
+![Game Start Screen](screenshots/game-start.png)
+![Gameplay Screen](screenshots/gameplay1.png)
+![Gameplay Screen](screenshots/gameplay2.png)

@@ -54,6 +54,6 @@ http://localhost:3000
 
 ## 📸 Screenshots
 
-![Game Start Screen](screenshots/game-start.png)
-![Gameplay Screen](screenshots/gameplay1.png)
-![Gameplay Screen](screenshots/gameplay2.png)
+![Game Start Screen](public/screenshots/game-start.png)
+![Gameplay Screen](public/screenshots/gameplay1.png)
+![Gameplay Screen](public/screenshots/gameplay2.png)

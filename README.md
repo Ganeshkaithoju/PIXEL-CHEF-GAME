@@ -23,6 +23,11 @@ Catch ingredients, manage time, and challenge yourself with different time limit
 4. Score as high as possible before time runs out!  
 
 ---
+
+## 📸 Screenshots
+
+![Gameplay Screenshot 1](./screenshots/gameplay1.png)
+![Gameplay Screenshot 2](./screenshots/gameplay2.png)
 ![Game Start Screen](https://github.com/Ganeshkaithoju/PIXEL-CHEF-GAME/blob/main/game-start.png?raw=true)
 ## 🛠️ Installation & Setup  
 ```bash
@@ -52,11 +57,5 @@ http://localhost:3000
 
 ---
 
-## 📸 Screenshots
 
-
-
-![Gameplay Screenshot 1](./screenshots/gameplay1.png)
-
-![Gameplay Screenshot 2](./screenshots/gameplay2.png)
 

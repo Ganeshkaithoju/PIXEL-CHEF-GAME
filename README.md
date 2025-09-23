@@ -26,12 +26,19 @@ Catch ingredients, manage time, and challenge yourself with different time limit
 
 ## 📸 Screenshots
 
+## Game Start Screen
 
-![Game Start Screen](https://github.com/Ganeshkaithoju/PIXEL-CHEF-GAME/blob/main/game-start.png?raw=true)
+![Game Start Screen](./screenshots/gameplay.png)
 
-![Gameplay Screenshot 1](./screenshots/gameplay1.png)
+## Gameplay Instructions
 
-![Gameplay Screenshot 2](./screenshots/gameplay2.png)
+![Gameplay Instructions](./screenshots/game-instructions.png)
+
+## Gameplay Screenshot
+
+![Gameplay Screenshot ](./screenshots/gameplay.png)
+
+
 ## 🛠️ Installation & Setup  
 ```bash
 # 1. Clone the repository

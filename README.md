@@ -28,7 +28,7 @@ Catch ingredients, manage time, and challenge yourself with different time limit
 
 ## Game Start Screen
 
-![Game Start Screen](./screenshots/gameplay.png)
+![Game Start Screen](./screenshots/game-start.png)
 
 ## Gameplay Instructions
 

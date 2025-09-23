@@ -59,6 +59,8 @@ npm start
 http://localhost:3000
 
 ---
+```
 
+## Available for mobile devices
 
-
+now the game is also resposive for all devices. Works in mobile devices with touch response

@@ -5,11 +5,35 @@ import { useEffect, useRef, useState } from "react"
 export default function PixelChefGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const gameRef = useRef<any>(null)
-  const [gameStarted, setGameStarted] = useState(false)
+  const [currentPage, setCurrentPage] = useState<"timeSelection" | "instructions" | "game">("timeSelection")
   const [selectedTime, setSelectedTime] = useState(30)
 
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
+
   useEffect(() => {
-    if (!gameStarted) return
+    const updateCanvasSize = () => {
+      const maxWidth = Math.min(window.innerWidth - 40, 800)
+      const maxHeight = Math.min(window.innerHeight - 200, 600)
+      const aspectRatio = 800 / 600
+
+      let width = maxWidth
+      let height = width / aspectRatio
+
+      if (height > maxHeight) {
+        height = maxHeight
+        width = height * aspectRatio
+      }
+
+      setCanvasSize({ width, height })
+    }
+
+    updateCanvasSize()
+    window.addEventListener("resize", updateCanvasSize)
+    return () => window.removeEventListener("resize", updateCanvasSize)
+  }, [])
+
+  useEffect(() => {
+    if (currentPage !== "game") return
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -17,7 +41,7 @@ export default function PixelChefGame() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Game constants
+    // Game constants - scale based on canvas size
     const CANVAS_WIDTH = 800
     const CANVAS_HEIGHT = 600
     const CHEF_WIDTH = 60
@@ -43,6 +67,11 @@ export default function PixelChefGame() {
       gameOver: false,
       powerUps: { magnet: 0, slowMotion: 0 },
       keys: { left: false, right: false },
+      touch: {
+        isDragging: false,
+        startX: 0,
+        lastX: 0,
+      },
     }
 
     const recipes = [
@@ -537,6 +566,11 @@ export default function PixelChefGame() {
               gameOver: false,
               powerUps: { magnet: 0, slowMotion: 0 },
               keys: { left: false, right: false },
+              touch: {
+                isDragging: false,
+                startX: 0,
+                lastX: 0,
+              },
             }
             initGame()
           }
@@ -555,8 +589,103 @@ export default function PixelChefGame() {
       }
     }
 
+    function handleTouchStart(e: TouchEvent) {
+      e.preventDefault()
+      const rect = canvas.getBoundingClientRect()
+      const touch = e.touches[0]
+      const touchX = ((touch.clientX - rect.left) * CANVAS_WIDTH) / rect.width
+      const touchY = ((touch.clientY - rect.top) * CANVAS_HEIGHT) / rect.height
+
+      // Check if touch is on or near the chef
+      if (
+        touchX >= gameState.chef.x - 20 &&
+        touchX <= gameState.chef.x + CHEF_WIDTH + 20 &&
+        touchY >= gameState.chef.y - 20 &&
+        touchY <= gameState.chef.y + CHEF_HEIGHT + 20
+      ) {
+        gameState.touch.isDragging = true
+        gameState.touch.startX = touchX
+        gameState.touch.lastX = touchX
+      }
+    }
+
+    function handleTouchMove(e: TouchEvent) {
+      e.preventDefault()
+      if (!gameState.touch.isDragging) return
+
+      const rect = canvas.getBoundingClientRect()
+      const touch = e.touches[0]
+      const touchX = ((touch.clientX - rect.left) * CANVAS_WIDTH) / rect.width
+
+      // Calculate movement delta
+      const deltaX = touchX - gameState.touch.lastX
+
+      // Move chef based on drag
+      const newX = gameState.chef.x + deltaX
+      if (newX >= 0 && newX <= CANVAS_WIDTH - CHEF_WIDTH) {
+        gameState.chef.x = newX
+      }
+
+      gameState.touch.lastX = touchX
+    }
+
+    function handleTouchEnd(e: TouchEvent) {
+      e.preventDefault()
+      gameState.touch.isDragging = false
+    }
+
+    function handleMouseDown(e: MouseEvent) {
+      const rect = canvas.getBoundingClientRect()
+      const mouseX = ((e.clientX - rect.left) * CANVAS_WIDTH) / rect.width
+      const mouseY = ((e.clientY - rect.top) * CANVAS_HEIGHT) / rect.height
+
+      // Check if click is on or near the chef
+      if (
+        mouseX >= gameState.chef.x - 20 &&
+        mouseX <= gameState.chef.x + CHEF_WIDTH + 20 &&
+        mouseY >= gameState.chef.y - 20 &&
+        mouseY <= gameState.chef.y + CHEF_HEIGHT + 20
+      ) {
+        gameState.touch.isDragging = true
+        gameState.touch.startX = mouseX
+        gameState.touch.lastX = mouseX
+      }
+    }
+
+    function handleMouseMove(e: MouseEvent) {
+      if (!gameState.touch.isDragging) return
+
+      const rect = canvas.getBoundingClientRect()
+      const mouseX = ((e.clientX - rect.left) * CANVAS_WIDTH) / rect.width
+
+      // Calculate movement delta
+      const deltaX = mouseX - gameState.touch.lastX
+
+      // Move chef based on drag
+      const newX = gameState.chef.x + deltaX
+      if (newX >= 0 && newX <= CANVAS_WIDTH - CHEF_WIDTH) {
+        gameState.chef.x = newX
+      }
+
+      gameState.touch.lastX = mouseX
+    }
+
+    function handleMouseUp(e: MouseEvent) {
+      gameState.touch.isDragging = false
+    }
+
     window.addEventListener("keydown", handleKeyDown)
     window.addEventListener("keyup", handleKeyUp)
+
+    // Touch events for mobile
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false })
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false })
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false })
+
+    // Mouse events for desktop drag support
+    canvas.addEventListener("mousedown", handleMouseDown)
+    canvas.addEventListener("mousemove", handleMouseMove)
+    canvas.addEventListener("mouseup", handleMouseUp)
 
     // Start game
     initGame()
@@ -566,108 +695,172 @@ export default function PixelChefGame() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
       window.removeEventListener("keyup", handleKeyUp)
+      canvas.removeEventListener("touchstart", handleTouchStart)
+      canvas.removeEventListener("touchmove", handleTouchMove)
+      canvas.removeEventListener("touchend", handleTouchEnd)
+      canvas.removeEventListener("mousedown", handleMouseDown)
+      canvas.removeEventListener("mousemove", handleMouseMove)
+      canvas.removeEventListener("mouseup", handleMouseUp)
     }
-  }, [gameStarted, selectedTime])
+  }, [currentPage, selectedTime, canvasSize]) // Added canvasSize as dependency
 
-  if (!gameStarted) {
+  if (currentPage === "timeSelection") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
-        <h1 className="text-4xl font-bold text-white mb-8">Pixel Chef: Kitchen Rush</h1>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 text-balance">Pixel Chef: Kitchen Rush</h1>
+          <p className="text-lg md:text-xl text-blue-200 text-pretty">Choose your challenge level</p>
+        </div>
 
-        <div className="bg-white p-8 rounded-lg shadow-lg mb-8 max-w-md w-full">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Game Options</h2>
+        <div className="bg-white/10 backdrop-blur-md p-6 md:p-8 rounded-2xl shadow-2xl border border-white/20 max-w-md w-full">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center">Select Time Duration</h2>
 
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">Select Time Duration:</label>
-            <div className="space-y-2">
-              <label className="flex items-center">
+          <div className="space-y-4">
+            {[
+              { value: 30, label: "30 seconds", desc: "Quick Challenge" },
+              { value: 60, label: "1 minute", desc: "Standard Game" },
+              { value: 90, label: "1.5 minutes", desc: "Extended Play" },
+            ].map((option) => (
+              <label
+                key={option.value}
+                className="flex items-center p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all cursor-pointer border border-white/10"
+              >
                 <input
                   type="radio"
-                  value={30}
-                  checked={selectedTime === 30}
+                  value={option.value}
+                  checked={selectedTime === option.value}
                   onChange={(e) => setSelectedTime(Number(e.target.value))}
-                  className="mr-2"
+                  className="mr-4 w-5 h-5 text-blue-500"
                 />
-                <span className="text-gray-700">30 seconds (Quick Game)</span>
+                <div>
+                  <span className="text-white font-semibold text-lg">{option.label}</span>
+                  <p className="text-blue-200 text-sm">{option.desc}</p>
+                </div>
               </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value={60}
-                  checked={selectedTime === 60}
-                  onChange={(e) => setSelectedTime(Number(e.target.value))}
-                  className="mr-2"
-                />
-                <span className="text-gray-700">1 minute (Standard Game)</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value={90}
-                  checked={selectedTime === 90}
-                  onChange={(e) => setSelectedTime(Number(e.target.value))}
-                  className="mr-2"
-                />
-                <span className="text-gray-700">1.5 minutes (Extended Game)</span>
-              </label>
-            </div>
+            ))}
           </div>
 
           <button
-            onClick={() => setGameStarted(true)}
-            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+            onClick={() => setCurrentPage("instructions")}
+            className="w-full mt-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg text-lg"
           >
-            Start Game
+            Continue
           </button>
         </div>
+      </div>
+    )
+  }
 
-        <div className="bg-white p-4 rounded-lg shadow-lg max-w-md w-full">
-          <p className="text-sm text-gray-700 mb-2">
-            <strong>Controls:</strong> Use ← → arrow keys to move the chef
+  if (currentPage === "instructions") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 text-balance">Get Ready to Cook!</h1>
+          <p className="text-lg text-blue-200">
+            Time Duration: <span className="font-bold text-yellow-300">{selectedTime} seconds</span> per recipe
           </p>
-          <p className="text-sm text-gray-700 mb-2">
-            <strong>Goal:</strong> Catch ingredients (🍅🥬🧀) to complete recipes, avoid hazards (💣🤢)
-          </p>
-          <p className="text-sm text-gray-700">
-            <strong>Power-ups:</strong> 🧲 Magnet attracts ingredients, ⏰ Clock adds +10 seconds
-          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full mb-8">
+          {/* Controls Card */}
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center">🎮 Controls</h3>
+            <div className="space-y-3 text-white">
+              <p className="flex items-center">
+                <span className="bg-white/20 px-3 py-1 rounded-lg mr-3 font-mono">← →</span>
+                Arrow keys to move (Desktop)
+              </p>
+              <p className="flex items-center">
+                <span className="bg-white/20 px-3 py-1 rounded-lg mr-3">👆</span>
+                Touch & drag chef (Mobile)
+              </p>
+            </div>
+          </div>
+
+          {/* Goal Card */}
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center">🎯 Goal</h3>
+            <div className="space-y-2 text-white">
+              <p>• Catch ingredients: 🍅 🥬 🧀</p>
+              <p>• Complete 5 recipes</p>
+              <p>• Avoid hazards: 💣 🤢</p>
+              <p>• Don't run out of health or time!</p>
+            </div>
+          </div>
+
+          {/* Power-ups Card */}
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center">⚡ Power-ups</h3>
+            <div className="space-y-2 text-white">
+              <p>
+                🧲 <strong>Magnet:</strong> Attracts ingredients
+              </p>
+              <p>
+                ⏰ <strong>Clock:</strong> Adds +10 seconds
+              </p>
+            </div>
+          </div>
+
+          {/* Scoring Card */}
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center">🏆 Scoring</h3>
+            <div className="space-y-2 text-white">
+              <p>• Ingredients: +10 points</p>
+              <p>• Recipe bonus: +100 points</p>
+              <p>• Bombs: -20 health</p>
+              <p>• Rotten food: -10 health</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={() => setCurrentPage("timeSelection")}
+            className="bg-gray-600/80 hover:bg-gray-700/80 text-white font-bold py-3 px-6 rounded-xl transition-all"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={() => setCurrentPage("game")}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg text-lg"
+          >
+            Let's Begin! 🚀
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
-      <h1 className="text-4xl font-bold text-white mb-4">Pixel Chef: Kitchen Rush</h1>
-      <div className="bg-white p-4 rounded-lg shadow-lg mb-4">
-        <p className="text-sm text-gray-700 mb-2">
-          <strong>Time Duration:</strong> {selectedTime} seconds per recipe
-        </p>
-        <p className="text-sm text-gray-700 mb-2">
-          <strong>Controls:</strong> Use ← → arrow keys to move the chef
-        </p>
-        <p className="text-sm text-gray-700 mb-2">
-          <strong>Goal:</strong> Catch ingredients (🍅🥬🧀) to complete recipes, avoid hazards (💣🤢)
-        </p>
-        <p className="text-sm text-gray-700">
-          <strong>Power-ups:</strong> 🧲 Magnet attracts ingredients, ⏰ Clock adds +10 seconds
-        </p>
-      </div>
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={600}
-        className="border-4 border-white rounded-lg shadow-2xl"
-        tabIndex={0}
-      />
-      <div className="flex gap-4 mt-4">
-        <p className="text-white text-sm">Press R to restart when game over</p>
-        <button
-          onClick={() => setGameStarted(false)}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
-        >
-          Back to Options
-        </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-2 md:p-4">
+      <div className="w-full max-w-4xl">
+        <h1 className="text-2xl md:text-4xl font-bold text-white mb-4 text-center">Pixel Chef: Kitchen Rush</h1>
+
+        <div className="flex justify-center mb-4">
+          <canvas
+            ref={canvasRef}
+            width={800}
+            height={600}
+            style={{
+              width: `${canvasSize.width}px`,
+              height: `${canvasSize.height}px`,
+              maxWidth: "100%",
+              height: "auto",
+            }}
+            className="border-4 border-white rounded-lg shadow-2xl bg-sky-200"
+            tabIndex={0}
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-white text-sm">
+          <p className="text-center">Press R to restart when game over</p>
+          <button
+            onClick={() => setCurrentPage("timeSelection")}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            ← Back to Menu
+          </button>
+        </div>
       </div>
     </div>
   )

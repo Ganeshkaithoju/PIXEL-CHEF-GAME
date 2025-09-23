@@ -32,7 +32,7 @@ Catch ingredients, manage time, and challenge yourself with different time limit
 
 ## Gameplay Instructions
 
-![Gameplay Instructions](./screenshots/game-instructions.png)
+![Gameplay Instructions](./screenshots/game-instruction.png)
 
 ## Gameplay Screenshot
 
